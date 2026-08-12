@@ -1,0 +1,922 @@
+* {
+    box-sizing: border-box;
+}
+
+
+body {
+
+    margin: 0;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background: #f1f4f8;
+
+    color: #111;
+
+}
+
+
+.app {
+    min-height: 100vh;
+}
+
+
+/* =========================================
+   HEADER
+========================================= */
+
+.header {
+
+    background: white;
+
+    text-align: center;
+
+    padding-top: 25px;
+
+}
+
+
+.logo {
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 12px;
+
+    font-size: 42px;
+
+    font-weight: 800;
+
+    color: #0756c9;
+
+    margin-bottom: 15px;
+
+}
+
+
+.logo-icon {
+
+    width: 58px;
+
+    height: 58px;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    border: 7px solid #087bea;
+
+    border-radius: 50%;
+
+    font-size: 32px;
+
+    font-weight: bold;
+
+}
+
+
+.header-title {
+
+    display: inline-block;
+
+    background: #123fa8;
+
+    color: white;
+
+    padding: 18px 45px;
+
+    border-radius: 35px;
+
+    font-size: 25px;
+
+    font-weight: bold;
+
+}
+
+
+.maximum {
+
+    margin-top: 20px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #087bea,
+            #0068d9
+        );
+
+    color: white;
+
+    padding: 25px;
+
+    font-size: 40px;
+
+    font-weight: 900;
+
+}
+
+
+/* =========================================
+   MAIN
+========================================= */
+
+.calculator {
+
+    width: 100%;
+
+    max-width: 1200px;
+
+    margin: 30px auto;
+
+    padding: 25px;
+
+    background: white;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 8px 30px
+        rgba(0, 0, 0, 0.12);
+
+}
+
+
+h1 {
+
+    text-align: center;
+
+    margin: 0;
+
+    font-size: 32px;
+
+}
+
+
+.subtitle {
+
+    text-align: center;
+
+    color: #777;
+
+    margin-top: 8px;
+
+    margin-bottom: 30px;
+
+}
+
+
+/* =========================================
+   FORM
+========================================= */
+
+.form-group {
+
+    margin-bottom: 20px;
+
+}
+
+
+.form-group label {
+
+    display: block;
+
+    font-weight: bold;
+
+    margin-bottom: 8px;
+
+}
+
+
+input[type="text"],
+input[type="number"] {
+
+    width: 100%;
+
+    padding: 14px;
+
+    border:
+        2px solid #ddd;
+
+    border-radius: 10px;
+
+    font-size: 18px;
+
+    outline: none;
+
+}
+
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+
+    border-color: #087bea;
+
+}
+
+
+.input-wrapper {
+
+    display: flex;
+
+    align-items: center;
+
+    border:
+        2px solid #ddd;
+
+    border-radius: 10px;
+
+    overflow: hidden;
+
+}
+
+
+.peso-symbol {
+
+    background: #f1f4f8;
+
+    padding: 14px 16px;
+
+    font-size: 20px;
+
+    font-weight: bold;
+
+}
+
+
+.input-wrapper input {
+
+    border: none;
+
+    flex: 1;
+
+    border-radius: 0;
+
+}
+
+
+small {
+
+    display: block;
+
+    margin-top: 6px;
+
+    color: #777;
+
+    line-height: 1.4;
+
+}
+
+
+/* =========================================
+   SETTLEMENT
+========================================= */
+
+.settlement-box {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 15px;
+
+    margin-bottom: 20px;
+
+    background: #f1f8ff;
+
+    border-radius: 10px;
+
+}
+
+
+.settlement-box input {
+
+    width: 20px;
+
+    height: 20px;
+
+}
+
+
+.settlement-box label {
+
+    font-weight: bold;
+
+}
+
+
+/* =========================================
+   BUTTONS
+========================================= */
+
+button {
+
+    width: 100%;
+
+    padding: 15px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    font-size: 18px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+}
+
+
+.calculate-btn {
+
+    background: #087bea;
+
+    color: white;
+
+}
+
+
+.calculate-btn:hover {
+
+    background: #0566c7;
+
+}
+
+
+.clear-btn {
+
+    margin-top: 10px;
+
+    background: #777;
+
+    color: white;
+
+}
+
+
+.clear-btn:hover {
+
+    background: #555;
+
+}
+
+
+/* =========================================
+   ERROR
+========================================= */
+
+.error {
+
+    display: none;
+
+    margin-top: 20px;
+
+    padding: 15px;
+
+    background: #ffe5e5;
+
+    color: #b00020;
+
+    border-left: 5px solid #d00000;
+
+    border-radius: 8px;
+
+    font-weight: bold;
+
+    line-height: 1.5;
+
+}
+
+
+/* =========================================
+   RESULT
+========================================= */
+
+.result {
+
+    display: none;
+
+    margin-top: 25px;
+
+    padding: 20px;
+
+    background: #f7faff;
+
+    border-radius: 12px;
+
+    border: 2px solid #dcecff;
+
+}
+
+
+.result h2 {
+
+    text-align: center;
+
+    margin-top: 0;
+
+}
+
+
+.result-row {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    padding: 12px 0;
+
+    border-bottom: 1px solid #ddd;
+
+}
+
+
+.result-row strong {
+
+    font-size: 18px;
+
+}
+
+
+.total-row {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-top: 15px;
+
+    padding: 18px;
+
+    background: #087bea;
+
+    color: white;
+
+    border-radius: 10px;
+
+    font-size: 20px;
+
+    font-weight: bold;
+
+}
+
+
+.total-row strong {
+
+    font-size: 25px;
+
+}
+
+
+.breakdown {
+
+    margin-top: 20px;
+
+    padding: 15px;
+
+    background: white;
+
+    border-radius: 10px;
+
+    line-height: 1.8;
+
+}
+
+
+.breakdown-title {
+
+    font-weight: bold;
+
+    font-size: 18px;
+
+    margin-bottom: 8px;
+
+}
+
+
+/* =========================================
+   FEE TABLE
+========================================= */
+
+.fee-table {
+
+    margin-top: 30px;
+
+    border-radius: 12px;
+
+    overflow: hidden;
+
+    border: 1px solid #ddd;
+
+}
+
+
+.fee-table h2 {
+
+    margin: 0;
+
+    padding: 15px;
+
+    background: #123fa8;
+
+    color: white;
+
+    text-align: center;
+
+}
+
+
+.fee-header,
+.fee-row {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    padding: 14px;
+
+    text-align: center;
+
+}
+
+
+.fee-header {
+
+    background: #eee;
+
+    font-weight: bold;
+
+}
+
+
+.fee-row {
+
+    border-top: 1px solid #ddd;
+
+}
+
+
+/* =========================================
+   RULES
+========================================= */
+
+.rules {
+
+    margin-top: 30px;
+
+    padding: 20px;
+
+    background: #f7f7f7;
+
+    border-radius: 12px;
+
+}
+
+
+.rules h2 {
+
+    margin-top: 0;
+
+    text-align: center;
+
+}
+
+
+.rule {
+
+    padding: 12px 0;
+
+    border-bottom: 1px solid #ddd;
+
+}
+
+
+.rule:last-child {
+
+    border-bottom: none;
+
+}
+
+
+.rule p {
+
+    margin-bottom: 0;
+
+    color: #555;
+
+    line-height: 1.6;
+
+}
+
+
+.no-settlement {
+
+    margin-top: 10px;
+
+    padding: 15px;
+
+    background: #fff0f0;
+
+    border-radius: 8px;
+
+}
+
+
+.no-settlement strong {
+
+    color: #c00000;
+
+}
+
+
+/* =========================================
+   DATABASE
+========================================= */
+
+.database {
+
+    margin-top: 35px;
+
+    padding: 20px;
+
+    background: #ffffff;
+
+    border-radius: 15px;
+
+    border: 2px solid #e0e0e0;
+
+}
+
+
+.database-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 20px;
+
+}
+
+
+.database-header h2 {
+
+    margin: 0;
+
+}
+
+
+.database-header p {
+
+    color: #777;
+
+}
+
+
+.delete-all-btn {
+
+    width: auto;
+
+    background: #d00000;
+
+    color: white;
+
+    padding:
+        10px
+        18px;
+
+    font-size: 14px;
+
+}
+
+
+.delete-all-btn:hover {
+
+    background: #a00000;
+
+}
+
+
+/* =========================================
+   SEARCH
+========================================= */
+
+.search-box {
+
+    margin:
+        20px 0;
+
+}
+
+
+.search-box input {
+
+    width: 100%;
+
+    padding: 14px;
+
+    border:
+        2px solid #ddd;
+
+    border-radius: 10px;
+
+    font-size: 16px;
+
+}
+
+
+/* =========================================
+   DATABASE TABLE
+========================================= */
+
+.table-container {
+
+    width: 100%;
+
+    overflow-x: auto;
+
+}
+
+
+table {
+
+    width: 100%;
+
+    min-width: 1250px;
+
+    border-collapse: collapse;
+
+}
+
+
+th {
+
+    background: #123fa8;
+
+    color: white;
+
+    padding: 12px;
+
+    text-align: center;
+
+    white-space: nowrap;
+
+}
+
+
+td {
+
+    padding: 11px;
+
+    border-bottom:
+        1px solid #ddd;
+
+    text-align: center;
+
+    white-space: nowrap;
+
+}
+
+
+tr:hover td {
+
+    background: #f4f8ff;
+
+}
+
+
+.delete-btn {
+
+    width: auto;
+
+    padding:
+        7px
+        12px;
+
+    background: #d00000;
+
+    color: white;
+
+    font-size: 13px;
+
+}
+
+
+.delete-btn:hover {
+
+    background: #a00000;
+
+}
+
+
+.empty-database {
+
+    text-align: center;
+
+    padding: 30px;
+
+    color: #777;
+
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+
+    .logo {
+
+        font-size: 32px;
+
+    }
+
+
+    .logo-icon {
+
+        width: 45px;
+
+        height: 45px;
+
+        font-size: 25px;
+
+    }
+
+
+    .header-title {
+
+        font-size: 18px;
+
+        padding: 14px 25px;
+
+    }
+
+
+    .maximum {
+
+        font-size: 28px;
+
+    }
+
+
+    .calculator {
+
+        margin: 15px;
+
+        padding: 20px;
+
+    }
+
+
+    h1 {
+
+        font-size: 27px;
+
+    }
+
+
+    .database-header {
+
+        flex-direction: column;
+
+        align-items: stretch;
+
+    }
+
+
+    .delete-all-btn {
+
+        width: 100%;
+
+    }
+
+
+    .total-row {
+
+        font-size: 17px;
+
+    }
+
+
+    .total-row strong {
+
+        font-size: 21px;
+
+    }
+
+}
