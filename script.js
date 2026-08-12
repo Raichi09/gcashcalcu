@@ -1,36 +1,23 @@
-/* =========================================================
-   GCash Cash-In & Cash-Out Fee Calculator
-   Midnight-Based Day Penalty
-========================================================= */
-
 const DATABASE_KEY = "cashin_transactions_v7";
 
-/* =========================================================
-   RULE CONSTANTS
-========================================================= */
-
-const HOURS_PER_DAY = 24;
 const FREE_HOURS = 4;
 
 const HOURLY_RATE = 1;
-const DAY_PENALTY = 2;
 
-const HIGH_FIRST_DAY = 50;
-const HIGH_NEXT_DAY = 30;
+const MIDNIGHT_PENALTY = 2;
+
+const HIGH_FIRST_MIDNIGHT = 50;
+const HIGH_NEXT_MIDNIGHT = 30;
 
 
 /* =========================================================
-   ROUND TO NEAREST ₱5
+   BASIC HELPERS
 ========================================================= */
 
 function roundToFive(amount) {
     return Math.round(amount / 5) * 5;
 }
 
-
-/* =========================================================
-   PESO FORMAT
-========================================================= */
 
 function peso(amount) {
     return new Intl.NumberFormat("en-PH", {
@@ -42,18 +29,10 @@ function peso(amount) {
 }
 
 
-/* =========================================================
-   GET ELEMENT
-========================================================= */
-
 function getElement(id) {
     return document.getElementById(id);
 }
 
-
-/* =========================================================
-   SET TEXT
-========================================================= */
 
 function setText(id, value) {
     const element = getElement(id);
@@ -95,7 +74,7 @@ function getBaseFee(amount) {
 
 
 /* =========================================================
-   GET DATE/TIME
+   DATE/TIME
 ========================================================= */
 
 function getDateTime(id) {
@@ -117,9 +96,7 @@ function getDateTime(id) {
 
 
 /* =========================================================
-   CALCULATE ELAPSED TIME
-
-   Minutes are ignored for fee calculation.
+   ELAPSED TIME
 ========================================================= */
 
 function calculateElapsed(start, end) {
@@ -137,22 +114,19 @@ function calculateElapsed(start, end) {
         );
 
     const totalHours =
-        Math.floor(
-            totalMinutes / 60
-        );
+        Math.floor(totalMinutes / 60);
 
     const minutes =
         totalMinutes % 60;
 
     const days =
-        Math.floor(
-            totalHours / HOURS_PER_DAY
-        );
+        Math.floor(totalHours / 24);
 
     const hours =
-        totalHours % HOURS_PER_DAY;
+        totalHours % 24;
 
     return {
+        totalMinutes,
         totalHours,
         days,
         hours,
@@ -162,55 +136,69 @@ function calculateElapsed(start, end) {
 
 
 /* =========================================================
-   COUNT MIDNIGHTS CROSSED
+   MIDNIGHT CALCULATION
+=========================================================
 
-   THIS IS THE IMPORTANT CHANGE.
+   IMPORTANT:
+
+   This does NOT wait 24 hours.
 
    Example:
 
-   August 12 - 4:00 PM
-   August 13 - 12:00 AM
+   Cash-in:
+   August 12, 4:00 PM
 
-   = 1 midnight crossed
+   Payment:
+   August 13, 12:00 AM
 
-   August 12 - 4:00 PM
-   August 14 - 12:00 AM
+   Result:
 
-   = 2 midnights crossed
+   1 midnight crossed
 
-   It does NOT wait for 24 hours.
+   Therefore:
+   ₱2 midnight penalty.
+
 ========================================================= */
 
-function calculateMidnightsCrossed(start, end) {
+function countMidnights(start, end) {
 
-    const startDate = new Date(
-        start.getFullYear(),
-        start.getMonth(),
-        start.getDate()
-    );
+    if (!start || !end || end <= start) {
+        return 0;
+    }
 
-    const endDate = new Date(
-        end.getFullYear(),
-        end.getMonth(),
-        end.getDate()
-    );
+    let count = 0;
 
-    const difference =
-        endDate.getTime() -
-        startDate.getTime();
+    /*
+        Start from the next midnight after the
+        cash-in time.
+    */
 
-    const days =
-        Math.floor(
-            difference /
-            (1000 * 60 * 60 * 24)
+    let midnight = new Date(start);
+
+    midnight.setHours(24, 0, 0, 0);
+
+
+    /*
+        Count every midnight that occurs at or
+        before the payment time.
+    */
+
+    while (midnight <= end) {
+
+        count++;
+
+        midnight.setDate(
+            midnight.getDate() + 1
         );
 
-    return Math.max(0, days);
+    }
+
+    return count;
 }
 
 
 /* =========================================================
-   MAIN CALCULATOR
+   CALCULATE FEE
 ========================================================= */
 
 function calculateFee() {
@@ -224,21 +212,26 @@ function calculateFee() {
     const settledElement =
         getElement("settled");
 
+
     const customerName =
         customerElement
             ? customerElement.value.trim()
             : "";
+
 
     const cashIn =
         cashInElement
             ? parseFloat(cashInElement.value)
             : NaN;
 
+
     const cashInTime =
         getDateTime("cashInTime");
 
+
     const paymentTime =
         getDateTime("paymentTime");
+
 
     const settled =
         settledElement
@@ -249,64 +242,69 @@ function calculateFee() {
     clearMessage();
 
 
-    /* =====================================================
+    /* -----------------------------------------------------
        VALIDATION
-    ===================================================== */
+    ----------------------------------------------------- */
 
     if (!customerName) {
+
         showError(
             "Please enter the customer name."
         );
+
         return;
     }
 
 
-    if (
-        !Number.isFinite(cashIn) ||
-        cashIn <= 0
-    ) {
+    if (!Number.isFinite(cashIn) || cashIn <= 0) {
+
         showError(
             "Please enter a valid cash-in amount."
         );
+
         return;
     }
 
 
     if (cashIn > 50000) {
+
         showError(
             "Maximum transaction amount is ₱50,000."
         );
+
         return;
     }
 
 
     if (!cashInTime) {
+
         showError(
             "Please enter the cash-in date and time."
         );
+
         return;
     }
 
 
     if (!paymentTime) {
+
         showError(
             "Please enter the payment date and time."
         );
+
         return;
     }
 
 
     if (paymentTime < cashInTime) {
+
         showError(
             "Payment time cannot be earlier than cash-in time."
         );
+
         return;
     }
 
-
-    /* =====================================================
-       ELAPSED TIME
-    ===================================================== */
 
     const elapsed =
         calculateElapsed(
@@ -314,46 +312,53 @@ function calculateFee() {
             paymentTime
         );
 
+
     if (!elapsed) {
+
         showError(
             "Unable to calculate elapsed time."
         );
+
         return;
     }
 
+
+    /*
+        Number of completed hours.
+    */
 
     const totalHours =
         elapsed.totalHours;
 
 
-    const remainingHours =
-        totalHours % HOURS_PER_DAY;
+    /*
+        NUMBER OF MIDNIGHTS CROSSED.
 
+        This is the important change.
 
-    /* =====================================================
-       MIDNIGHTS CROSSED
+        It is NOT:
 
-       NEW SYSTEM:
-       NOT 24-HOUR PERIODS.
+        Math.floor(totalHours / 24)
 
-       Every calendar midnight crossed = 1 day.
-    ===================================================== */
+        Instead it checks actual calendar
+        midnight boundaries.
+    */
 
-    const lateDays =
-        calculateMidnightsCrossed(
+    const midnightCount =
+        countMidnights(
             cashInTime,
             paymentTime
         );
 
 
-    /* =====================================================
-       SETTLEMENT RULE
-    ===================================================== */
+    /*
+        Settlement warning.
 
-    if (
-        totalHours > 0 &&
-        !settled
-    ) {
+        If there is any time difference and
+        previous debt is not settled, stop.
+    */
+
+    if (totalHours > 0 && !settled) {
 
         showError(
             "NO SETTLEMENT, NO CASH-IN: Please settle the previous debt first."
@@ -363,25 +368,23 @@ function calculateFee() {
     }
 
 
-    /* =====================================================
-       BASE FEE
-    ===================================================== */
-
     const baseFee =
         getBaseFee(cashIn);
 
 
     if (baseFee === null) {
+
         showError(
             "Could not determine the base fee."
         );
+
         return;
     }
 
 
-    /* =====================================================
-       INITIAL VALUES
-    ===================================================== */
+    /* -----------------------------------------------------
+       PENALTY VARIABLES
+    ----------------------------------------------------- */
 
     let dayPenalty = 0;
 
@@ -396,8 +399,6 @@ function calculateFee() {
 
     /* =====================================================
        BELOW ₱100
-
-       NO LATE PENALTY
     ===================================================== */
 
     if (cashIn < 100) {
@@ -411,67 +412,72 @@ function calculateFee() {
         rawLatePenalty = 0;
 
         roundedLatePenalty = 0;
+
     }
 
 
     /* =====================================================
        ₱100 – ₱1,999
+    =====================================================
 
-       First 4 hours are FREE.
+       First 4 hours = FREE
 
-       Hourly penalty:
-       Every completed hour after free hours = ₱1.
+       Every completed hour after the
+       first 4 hours = ₱1
 
-       Midnight penalty:
-       Every midnight crossed = ₱2.
-
-       IMPORTANT:
-       Midnight penalty does NOT require 24 hours.
+       Every midnight crossed = ₱2
     ===================================================== */
 
     else if (cashIn <= 1999) {
 
-        /* ---------------------------------------------
-           MIDNIGHT PENALTY
-        --------------------------------------------- */
+        /*
+            HOURLY PENALTY
 
-        dayPenalty =
-            lateDays *
-            DAY_PENALTY;
+            First 4 hours are free.
 
+            Example:
 
-        /* ---------------------------------------------
-           HOURLY PENALTY
+            4:00 PM → 8:00 PM
+            4 hours
+            ₱0 hourly penalty
 
-           First 4 completed hours are free.
+            4:00 PM → 9:00 PM
+            5 hours
+            1 chargeable hour
+            ₱1
+        */
 
-           Everything after that is ₱1/hour.
+        if (totalHours > FREE_HOURS) {
 
-           Example:
+            chargeableHours =
+                totalHours - FREE_HOURS;
 
-           4 PM → 12 AM
-           = 8 completed hours
+        } else {
 
-           4 free hours
-           4 chargeable hours
-           = ₱4
-        --------------------------------------------- */
-
-        chargeableHours =
-            Math.max(
-                0,
-                totalHours - FREE_HOURS
-            );
+            chargeableHours = 0;
+        }
 
 
         hourlyPenalty =
-            chargeableHours *
-            HOURLY_RATE;
+            chargeableHours * HOURLY_RATE;
 
 
-        /* ---------------------------------------------
-           TOTAL LATE PENALTY
-        --------------------------------------------- */
+        /*
+            MIDNIGHT PENALTY
+
+            Example:
+
+            4 PM → 12 AM
+
+            midnightCount = 1
+
+            1 × ₱2 = ₱2
+        */
+
+        dayPenalty =
+            midnightCount *
+            MIDNIGHT_PENALTY;
+
 
         rawLatePenalty =
             dayPenalty +
@@ -482,20 +488,19 @@ function calculateFee() {
             roundToFive(
                 rawLatePenalty
             );
+
     }
 
 
     /* =====================================================
        ₱2,000 AND ABOVE
+    =====================================================
 
-       First midnight:
-       ₱50
+       First midnight = ₱50
 
-       Second midnight:
-       + ₱30
+       Second midnight = ₱30
 
-       Third midnight:
-       + ₱30
+       Third midnight = ₱30
 
        No hourly penalty.
     ===================================================== */
@@ -507,13 +512,13 @@ function calculateFee() {
         hourlyPenalty = 0;
 
 
-        if (lateDays >= 1) {
+        if (midnightCount >= 1) {
 
             dayPenalty =
-                HIGH_FIRST_DAY +
+                HIGH_FIRST_MIDNIGHT +
                 (
-                    (lateDays - 1) *
-                    HIGH_NEXT_DAY
+                    (midnightCount - 1) *
+                    HIGH_NEXT_MIDNIGHT
                 );
 
             rawLatePenalty =
@@ -523,12 +528,14 @@ function calculateFee() {
                 roundToFive(
                     rawLatePenalty
                 );
+
         }
+
     }
 
 
     /* =====================================================
-       TOTAL FEE
+       TOTALS
     ===================================================== */
 
     const rawTotalFee =
@@ -556,77 +563,90 @@ function calculateFee() {
         customerName
     );
 
+
     setText(
         "resultCashIn",
         peso(cashIn)
     );
+
 
     setText(
         "resultCashInTime",
         formatDate(cashInTime)
     );
 
+
     setText(
         "resultPaymentTime",
         formatDate(paymentTime)
     );
 
+
     setText(
         "resultElapsedTime",
-        `${elapsed.days} day(s), ` +
-        `${elapsed.hours} hour(s), ` +
-        `${elapsed.minutes} minute(s)`
+        `${elapsed.days} day(s), ${elapsed.hours} hour(s), ${elapsed.minutes} minute(s)`
     );
+
 
     setText(
         "resultCompletedHours",
         totalHours
     );
 
+
     setText(
         "resultLateDays",
-        lateDays
+        midnightCount
     );
+
 
     setText(
         "resultBaseFee",
         peso(baseFee)
     );
 
+
     setText(
         "resultDayPenalty",
         peso(dayPenalty)
     );
+
 
     setText(
         "resultChargeableHours",
         chargeableHours
     );
 
+
     setText(
         "resultHourlyPenalty",
         peso(hourlyPenalty)
     );
+
 
     setText(
         "resultRawPenalty",
         peso(rawLatePenalty)
     );
 
+
     setText(
         "resultPenalty",
         peso(roundedLatePenalty)
     );
+
 
     setText(
         "resultRawFee",
         peso(rawTotalFee)
     );
 
+
     setText(
         "resultFee",
         peso(totalFee)
     );
+
 
     setText(
         "resultTotal",
@@ -650,11 +670,6 @@ function calculateFee() {
                 Fee Calculation Breakdown
             </div>
 
-            <strong>Customer:</strong>
-            ${escapeHtml(customerName)}
-
-            <br><br>
-
             <strong>Cash-In:</strong>
             ${peso(cashIn)}
 
@@ -662,16 +677,6 @@ function calculateFee() {
 
             <strong>Base Fee:</strong>
             ${peso(baseFee)}
-
-            <br><br>
-
-            <strong>Cash-In Time:</strong>
-            ${formatDate(cashInTime)}
-
-            <br>
-
-            <strong>Payment Time:</strong>
-            ${formatDate(paymentTime)}
 
             <br>
 
@@ -688,22 +693,14 @@ function calculateFee() {
             <strong>Completed Hours:</strong>
             ${totalHours}
 
-            <br><br>
+            <br>
 
             <strong>Midnights Crossed:</strong>
-            ${lateDays}
+            ${midnightCount}
 
             <br>
 
-            <small>
-                Every calendar midnight crossed adds
-                ₱${DAY_PENALTY.toFixed(2)}
-                for ₱100–₱1,999 transactions.
-            </small>
-
-            <br><br>
-
-            <strong>Day Penalty:</strong>
+            <strong>Midnight Penalty:</strong>
             ${peso(dayPenalty)}
 
             <br>
@@ -731,7 +728,7 @@ function calculateFee() {
             <strong>Hourly Penalty:</strong>
             ${peso(hourlyPenalty)}
 
-            <br><br>
+            <br>
 
             <strong>Raw Late Penalty:</strong>
             ${peso(rawLatePenalty)}
@@ -741,21 +738,15 @@ function calculateFee() {
             <strong>Rounded Late Penalty:</strong>
             ${peso(roundedLatePenalty)}
 
-            <br><br>
-
-            <strong>Base Fee + Late Penalty:</strong>
-            ${peso(rawTotalFee)}
-
             <br>
 
-            <strong>Rounded Total Fee:</strong>
+            <strong>Final Fee:</strong>
             ${peso(totalFee)}
 
             <br><br>
 
             <strong>TOTAL TO PAY:</strong>
             ${peso(totalToPay)}
-
         `;
     }
 
@@ -775,8 +766,7 @@ function calculateFee() {
 
     saveTransaction({
 
-        id:
-            createTransactionId(),
+        id: createTransactionId(),
 
         date:
             new Date().toISOString(),
@@ -803,9 +793,10 @@ function calculateFee() {
         completedHours:
             totalHours,
 
-        lateDays,
+        midnightCount,
 
-        remainingHours,
+        lateDays:
+            midnightCount,
 
         baseFee,
 
@@ -829,11 +820,12 @@ function calculateFee() {
         settled
 
     });
+
 }
 
 
 /* =========================================================
-   CREATE TRANSACTION ID
+   TRANSACTION ID
 ========================================================= */
 
 function createTransactionId() {
@@ -859,13 +851,16 @@ function saveTransaction(transaction) {
     const transactions =
         getTransactions();
 
+
     transactions.unshift(
         transaction
     );
 
+
     saveTransactions(
         transactions
     );
+
 
     displayRecords();
 }
@@ -882,14 +877,17 @@ function getTransactions() {
             DATABASE_KEY
         );
 
+
     if (!saved) {
         return [];
     }
+
 
     try {
 
         const data =
             JSON.parse(saved);
+
 
         return Array.isArray(data)
             ? data
@@ -898,7 +896,7 @@ function getTransactions() {
     } catch (error) {
 
         console.error(
-            "Database error:",
+            "Unable to read transactions:",
             error
         );
 
@@ -933,10 +931,12 @@ function displayRecords() {
             "transactionTable"
         );
 
+
     const count =
         getElement(
             "recordCount"
         );
+
 
     if (!table) {
         return;
@@ -1020,11 +1020,13 @@ function displayRecords() {
                     )}
                 </td>
 
+
                 <td>
                     ${escapeHtml(
                         transaction.customerName
                     )}
                 </td>
+
 
                 <td>
                     ${peso(
@@ -1032,11 +1034,13 @@ function displayRecords() {
                     )}
                 </td>
 
+
                 <td>
                     ${formatDate(
                         transaction.cashInTime
                     )}
                 </td>
+
 
                 <td>
                     ${formatDate(
@@ -1044,9 +1048,14 @@ function displayRecords() {
                     )}
                 </td>
 
+
                 <td>
-                    ${transaction.completedHours ?? 0}
+                    ${
+                        transaction.completedHours ??
+                        0
+                    }
                 </td>
+
 
                 <td>
                     ${peso(
@@ -1054,15 +1063,21 @@ function displayRecords() {
                     )}
                 </td>
 
+
                 <td>
                     ${peso(
                         transaction.dayPenalty || 0
                     )}
                 </td>
 
+
                 <td>
-                    ${transaction.chargeableHours ?? 0}
+                    ${
+                        transaction.chargeableHours ??
+                        0
+                    }
                 </td>
+
 
                 <td>
                     ${peso(
@@ -1070,17 +1085,20 @@ function displayRecords() {
                     )}
                 </td>
 
+
                 <td>
                     ${peso(
                         transaction.latePenalty || 0
                     )}
                 </td>
 
+
                 <td>
                     ${peso(
                         transaction.totalFee || 0
                     )}
                 </td>
+
 
                 <td>
                     <strong>
@@ -1089,6 +1107,7 @@ function displayRecords() {
                         )}
                     </strong>
                 </td>
+
 
                 <td>
 
@@ -1105,7 +1124,10 @@ function displayRecords() {
             `;
 
 
-            table.appendChild(row);
+            table.appendChild(
+                row
+            );
+
         }
     );
 }
@@ -1199,11 +1221,7 @@ function formatDate(value) {
         new Date(value);
 
 
-    if (
-        isNaN(
-            date.getTime()
-        )
-    ) {
+    if (isNaN(date.getTime())) {
         return "-";
     }
 
@@ -1233,17 +1251,19 @@ function escapeHtml(text) {
             "div"
         );
 
+
     div.textContent =
         text == null
             ? ""
             : String(text);
+
 
     return div.innerHTML;
 }
 
 
 /* =========================================================
-   SHOW ERROR
+   ERROR
 ========================================================= */
 
 function showError(message) {
@@ -1255,7 +1275,6 @@ function showError(message) {
 
 
     if (!error) {
-        alert(message);
         return;
     }
 
@@ -1263,14 +1282,11 @@ function showError(message) {
     error.textContent =
         message;
 
+
     error.style.display =
         "block";
 }
 
-
-/* =========================================================
-   CLEAR MESSAGE
-========================================================= */
 
 function clearMessage() {
 
@@ -1285,7 +1301,9 @@ function clearMessage() {
     }
 
 
-    error.textContent = "";
+    error.textContent =
+        "";
+
 
     error.style.display =
         "none";
@@ -1309,9 +1327,11 @@ function clearCalculator() {
             const element =
                 getElement(id);
 
+
             if (element) {
                 element.value = "";
             }
+
         }
     );
 
@@ -1340,7 +1360,7 @@ function clearCalculator() {
 
 
 /* =========================================================
-   START DATABASE
+   PAGE LOAD
 ========================================================= */
 
 document.addEventListener(
