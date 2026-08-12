@@ -1,44 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Cash-In Fee Calculator</title>
-
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCash Cash-In & Cash-Out Calculator</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <div class="app">
 
-    <!-- =====================================================
-         HEADER
-    ====================================================== -->
-
     <header class="header">
-
         <div class="logo">
-
-            <div class="logo-icon">
-                G
-            </div>
-
-            <span>
-                GCash
-            </span>
-
+            <div class="logo-icon">G</div>
+            <span>GCash</span>
         </div>
 
         <div class="header-title">
@@ -48,60 +24,30 @@
         <div class="maximum">
             MAXIMUM ₱50,000
         </div>
-
     </header>
-
-
-    <!-- =====================================================
-         MAIN CALCULATOR
-    ====================================================== -->
 
     <main class="calculator">
 
-        <h1>
-            Fee Calculator
-        </h1>
-
+        <h1>Fee Calculator</h1>
         <p class="subtitle">
             Enter customer transaction details
         </p>
 
-
-        <!-- =================================================
-             CUSTOMER
-        ================================================== -->
-
         <div class="form-group">
-
-            <label for="customerName">
-                Customer Name
-            </label>
-
+            <label for="customerName">Customer Name</label>
             <input
                 type="text"
                 id="customerName"
                 placeholder="Enter customer name"
                 maxlength="100"
             >
-
         </div>
 
-
-        <!-- =================================================
-             CASH-IN AMOUNT
-        ================================================== -->
-
         <div class="form-group">
-
-            <label for="cashIn">
-                Cash-In Amount
-            </label>
+            <label for="cashIn">Cash-In Amount</label>
 
             <div class="input-wrapper">
-
-                <span class="peso-symbol">
-                    ₱
-                </span>
+                <span class="peso-symbol">₱</span>
 
                 <input
                     type="number"
@@ -111,82 +57,36 @@
                     max="50000"
                     step="0.01"
                 >
-
             </div>
 
-            <small>
-                Maximum transaction amount: ₱50,000
-            </small>
-
+            <small>Maximum transaction amount: ₱50,000</small>
         </div>
 
-
-        <!-- =================================================
-             CASH-IN TIME
-        ================================================== -->
-
         <div class="form-group">
-
-            <label for="cashInTime">
-                Cash-In Time
-            </label>
+            <label for="cashInTime">Cash-In Time</label>
 
             <input
                 type="datetime-local"
                 id="cashInTime"
             >
-
-            <small>
-                Enter the date and time when the cash-in was made.
-            </small>
-
         </div>
 
-
-        <!-- =================================================
-             PAYMENT TIME
-        ================================================== -->
-
         <div class="form-group">
-
-            <label for="paymentTime">
-                Payment / Settlement Time
-            </label>
+            <label for="paymentTime">Payment / Settlement Time</label>
 
             <input
                 type="datetime-local"
                 id="paymentTime"
             >
-
-            <small>
-                Enter the date and time when the customer pays.
-                Minutes are ignored in the penalty calculation.
-            </small>
-
         </div>
 
-
-        <!-- =================================================
-             SETTLEMENT
-        ================================================== -->
-
         <div class="settlement-box">
-
-            <input
-                type="checkbox"
-                id="settled"
-            >
+            <input type="checkbox" id="settled">
 
             <label for="settled">
                 Previous debt has been settled
             </label>
-
         </div>
-
-
-        <!-- =================================================
-             BUTTONS
-        ================================================== -->
 
         <button
             type="button"
@@ -196,7 +96,6 @@
             CALCULATE & SAVE
         </button>
 
-
         <button
             type="button"
             class="clear-btn"
@@ -205,494 +104,188 @@
             CLEAR
         </button>
 
+        <div id="errorMessage" class="error"></div>
 
-        <!-- =================================================
-             ERROR MESSAGE
-        ================================================== -->
+        <div id="result" class="result">
 
-        <div
-            id="errorMessage"
-            class="error"
-        ></div>
-
-
-        <!-- =================================================
-             RESULT
-        ================================================== -->
-
-        <div
-            id="result"
-            class="result"
-        >
-
-            <h2>
-                Transaction Summary
-            </h2>
-
-
-            <!-- CUSTOMER -->
+            <h2>Transaction Summary</h2>
 
             <div class="result-row">
-
-                <span>
-                    Customer
-                </span>
-
-                <strong id="resultName">
-                    -
-                </strong>
-
+                <span>Customer</span>
+                <strong id="resultName">-</strong>
             </div>
-
-
-            <!-- CASH-IN -->
 
             <div class="result-row">
-
-                <span>
-                    Cash-In Amount
-                </span>
-
-                <strong id="resultCashIn">
-                    ₱0.00
-                </strong>
-
+                <span>Cash-In Amount</span>
+                <strong id="resultCashIn">₱0.00</strong>
             </div>
-
-
-            <!-- CASH-IN TIME -->
 
             <div class="result-row">
-
-                <span>
-                    Cash-In Time
-                </span>
-
-                <strong id="resultCashInTime">
-                    -
-                </strong>
-
+                <span>Cash-In Time</span>
+                <strong id="resultCashInTime">-</strong>
             </div>
-
-
-            <!-- PAYMENT TIME -->
 
             <div class="result-row">
-
-                <span>
-                    Payment Time
-                </span>
-
-                <strong id="resultPaymentTime">
-                    -
-                </strong>
-
+                <span>Payment Time</span>
+                <strong id="resultPaymentTime">-</strong>
             </div>
-
-
-            <!-- ELAPSED TIME -->
 
             <div class="result-row">
-
-                <span>
-                    Elapsed Time
-                </span>
-
-                <strong id="resultElapsedTime">
-                    -
-                </strong>
-
+                <span>Elapsed Time</span>
+                <strong id="resultElapsedTime">-</strong>
             </div>
-
-
-            <!-- COMPLETED HOURS -->
 
             <div class="result-row">
-
-                <span>
-                    Completed Hours
-                </span>
-
-                <strong id="resultCompletedHours">
-                    0
-                </strong>
-
+                <span>Completed Hours</span>
+                <strong id="resultCompletedHours">0</strong>
             </div>
-
-
-            <!-- FULL DAYS -->
 
             <div class="result-row">
-
-                <span>
-                    Full Late Days
-                </span>
-
-                <strong id="resultLateDays">
-                    0
-                </strong>
-
+                <span>Full Late Days</span>
+                <strong id="resultLateDays">0</strong>
             </div>
-
-
-            <!-- BASE FEE -->
 
             <div class="result-row">
-
-                <span>
-                    Base Fee
-                </span>
-
-                <strong id="resultBaseFee">
-                    ₱0.00
-                </strong>
-
+                <span>Base Fee</span>
+                <strong id="resultBaseFee">₱0.00</strong>
             </div>
-
-
-            <!-- DAY PENALTY -->
 
             <div class="result-row">
-
-                <span>
-                    Full-Day Penalty
-                </span>
-
-                <strong id="resultDayPenalty">
-                    ₱0.00
-                </strong>
-
+                <span>Day Penalty</span>
+                <strong id="resultDayPenalty">₱0.00</strong>
             </div>
-
-
-            <!-- CHARGEABLE HOURS -->
 
             <div class="result-row">
-
-                <span>
-                    Chargeable Hours
-                </span>
-
-                <strong id="resultChargeableHours">
-                    0
-                </strong>
-
+                <span>Chargeable Hours</span>
+                <strong id="resultChargeableHours">0</strong>
             </div>
-
-
-            <!-- HOURLY PENALTY -->
 
             <div class="result-row">
-
-                <span>
-                    Hourly Penalty
-                </span>
-
-                <strong id="resultHourlyPenalty">
-                    ₱0.00
-                </strong>
-
+                <span>Hourly Penalty</span>
+                <strong id="resultHourlyPenalty">₱0.00</strong>
             </div>
-
-
-            <!-- RAW LATE PENALTY -->
 
             <div class="result-row">
-
-                <span>
-                    Raw Late Penalty
-                </span>
-
-                <strong id="resultRawPenalty">
-                    ₱0.00
-                </strong>
-
+                <span>Raw Late Penalty</span>
+                <strong id="resultRawPenalty">₱0.00</strong>
             </div>
-
-
-            <!-- ROUNDED LATE PENALTY -->
 
             <div class="result-row">
-
-                <span>
-                    Rounded Late Penalty
-                </span>
-
-                <strong id="resultPenalty">
-                    ₱0.00
-                </strong>
-
+                <span>Rounded Late Penalty</span>
+                <strong id="resultPenalty">₱0.00</strong>
             </div>
-
-
-            <!-- RAW TOTAL FEE -->
 
             <div class="result-row">
-
-                <span>
-                    Raw Total Fee
-                </span>
-
-                <strong id="resultRawFee">
-                    ₱0.00
-                </strong>
-
+                <span>Raw Total Fee</span>
+                <strong id="resultRawFee">₱0.00</strong>
             </div>
-
-
-            <!-- FINAL TOTAL FEE -->
 
             <div class="result-row">
-
-                <span>
-                    Rounded Total Fee
-                </span>
-
-                <strong id="resultFee">
-                    ₱0.00
-                </strong>
-
+                <span>Rounded Total Fee</span>
+                <strong id="resultFee">₱0.00</strong>
             </div>
-
-
-            <!-- TOTAL TO PAY -->
 
             <div class="total-row">
-
-                <span>
-                    TOTAL TO PAY
-                </span>
-
-                <strong id="resultTotal">
-                    ₱0.00
-                </strong>
-
+                <span>TOTAL TO PAY</span>
+                <strong id="resultTotal">₱0.00</strong>
             </div>
 
-
-            <!-- BREAKDOWN -->
-
-            <div
-                id="breakdown"
-                class="breakdown"
-            ></div>
+            <div id="breakdown" class="breakdown"></div>
 
         </div>
-
-
-        <!-- =================================================
-             BASE FEE TABLE
-        ================================================== -->
 
         <div class="fee-table">
 
-            <h2>
-                Base Fee Schedule
-            </h2>
-
+            <h2>Base Fee Schedule</h2>
 
             <div class="fee-header">
-
-                <span>
-                    AMOUNT
-                </span>
-
-                <span>
-                    FEE
-                </span>
-
+                <span>AMOUNT</span>
+                <span>FEE</span>
             </div>
 
-
             <div class="fee-row">
-
-                <span>
-                    ₱1 – ₱500
-                </span>
-
-                <strong>
-                    ₱5
-                </strong>
-
+                <span>₱1 – ₱500</span>
+                <strong>₱5</strong>
             </div>
 
-
             <div class="fee-row">
-
-                <span>
-                    ₱501 – ₱1,999
-                </span>
-
-                <strong>
-                    ₱10
-                </strong>
-
+                <span>₱501 – ₱1,999</span>
+                <strong>₱10</strong>
             </div>
 
-
             <div class="fee-row">
-
-                <span>
-                    ₱2,000 – ₱5,000
-                </span>
-
-                <strong>
-                    ₱15
-                </strong>
-
+                <span>₱2,000 – ₱5,000</span>
+                <strong>₱15</strong>
             </div>
 
-
             <div class="fee-row">
-
-                <span>
-                    ₱5,001 – ₱9,999
-                </span>
-
-                <strong>
-                    ₱35
-                </strong>
-
+                <span>₱5,001 – ₱9,999</span>
+                <strong>₱35</strong>
             </div>
 
-
             <div class="fee-row">
-
-                <span>
-                    ₱10,000 – ₱50,000
-                </span>
-
-                <strong>
-                    ₱60
-                </strong>
-
+                <span>₱10,000 – ₱50,000</span>
+                <strong>₱60</strong>
             </div>
 
         </div>
-
-
-        <!-- =================================================
-             RULES
-        ================================================== -->
 
         <div class="rules">
 
-            <h2>
-                Late Fee Rules
-            </h2>
-
+            <h2>Late Fee Rules</h2>
 
             <div class="rule">
-
-                <strong>
-                    Below ₱100
-                </strong>
-
-                <p>
-                    No additional late charge.
-                    The applicable base fee still applies.
-                </p>
-
+                <strong>Below ₱100</strong>
+                <p>No late penalty.</p>
             </div>
 
-
             <div class="rule">
-
-                <strong>
-                    ₱100 – ₱1,999
-                </strong>
-
+                <strong>₱100 – ₱1,999</strong>
                 <p>
-                    First 4 hours of each 24-hour period are FREE.
-                    Each completed 24-hour day has a ₱2 day penalty
-                    plus 20 chargeable hours at ₱0.50 per hour.
-                    Extra hours after the 4 free hours are ₱0.50 per hour.
-                    Minutes are ignored.
+                    First 4 hours free.<br>
+                    ₱1 per chargeable hour.<br>
+                    ₱2 per completed 24-hour day.
                 </p>
-
             </div>
 
-
             <div class="rule">
-
-                <strong>
-                    ₱2,000 and above
-                </strong>
-
+                <strong>₱2,000 and above</strong>
                 <p>
-                    Day 1 Late = ₱50.
-                    Day 2 onwards = ₱20 per completed day.
+                    Day 1 = ₱50.<br>
+                    Day 2 onward = ₱30 per completed day.<br>
                     No hourly penalty.
                 </p>
-
             </div>
-
 
             <div class="rule">
-
-                <strong>
-                    FEE ROUNDING
-                </strong>
-
-                <p>
-                    The final total fee is rounded to the nearest ₱5.
-                </p>
-
+                <strong>FEE ROUNDING</strong>
+                <p>Final fee rounded to nearest ₱5.</p>
             </div>
-
 
             <div class="rule">
-
-                <strong>
-                    TOTAL TO PAY
-                </strong>
-
-                <p>
-                    Cash-In Amount + Total Fee.
-                </p>
-
+                <strong>TOTAL TO PAY</strong>
+                <p>Cash-In Amount + Total Fee.</p>
             </div>
-
 
             <div class="rule no-settlement">
-
-                <strong>
-                    NO SETTLEMENT, NO CASH-IN
-                </strong>
-
-                <p>
-                    Previous debt must be settled before
-                    another transaction can be made.
-                </p>
-
+                <strong>NO SETTLEMENT, NO CASH-IN</strong>
+                <p>Previous debt must be settled.</p>
             </div>
 
         </div>
-
-
-        <!-- =================================================
-             DATABASE
-        ================================================== -->
 
         <section class="database">
 
             <div class="database-header">
 
                 <div>
-
-                    <h2>
-                        Transaction Database
-                    </h2>
+                    <h2>Transaction Database</h2>
 
                     <p>
                         Saved transactions:
-                        <strong id="recordCount">
-                            0
-                        </strong>
+                        <strong id="recordCount">0</strong>
                     </p>
-
                 </div>
-
 
                 <button
                     type="button"
@@ -704,95 +297,39 @@
 
             </div>
 
-
-            <!-- SEARCH -->
-
             <div class="search-box">
-
                 <input
                     type="text"
                     id="searchInput"
                     placeholder="Search customer name..."
                     oninput="displayRecords()"
                 >
-
             </div>
-
-
-            <!-- DATABASE TABLE -->
 
             <div class="table-container">
 
                 <table>
 
                     <thead>
-
                         <tr>
-
-                            <th>
-                                Date
-                            </th>
-
-                            <th>
-                                Customer
-                            </th>
-
-                            <th>
-                                Cash-In
-                            </th>
-
-                            <th>
-                                Cash-In Time
-                            </th>
-
-                            <th>
-                                Payment Time
-                            </th>
-
-                            <th>
-                                Completed Hours
-                            </th>
-
-                            <th>
-                                Base Fee
-                            </th>
-
-                            <th>
-                                Day Penalty
-                            </th>
-
-                            <th>
-                                Chargeable Hours
-                            </th>
-
-                            <th>
-                                Hour Penalty
-                            </th>
-
-                            <th>
-                                Late Penalty
-                            </th>
-
-                            <th>
-                                Total Fee
-                            </th>
-
-                            <th>
-                                Total Pay
-                            </th>
-
-                            <th>
-                                Action
-                            </th>
-
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>Cash-In</th>
+                            <th>Cash-In Time</th>
+                            <th>Payment Time</th>
+                            <th>Hours</th>
+                            <th>Base Fee</th>
+                            <th>Day Penalty</th>
+                            <th>Chargeable Hours</th>
+                            <th>Hour Penalty</th>
+                            <th>Late Penalty</th>
+                            <th>Total Fee</th>
+                            <th>Total Pay</th>
+                            <th>Action</th>
                         </tr>
-
                     </thead>
 
-
-                    <tbody id="transactionTable">
-
-                    </tbody>
+                    <tbody id="transactionTable"></tbody>
 
                 </table>
 
@@ -804,13 +341,7 @@
 
 </div>
 
-
-<!-- =====================================================
-     JAVASCRIPT
-====================================================== -->
-
 <script src="script.js"></script>
 
 </body>
-
 </html>
