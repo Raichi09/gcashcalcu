@@ -1,9 +1,7 @@
-
 const DATABASE_KEY = "cashin_transactions_v9";
 
 const FREE_HOURS = 4;
 const HOURLY_RATE = 1;
-
 const MIDNIGHT_PENALTY = 2;
 
 const HIGH_FIRST_MIDNIGHT = 50;
@@ -26,7 +24,15 @@ function peso(amount) {
 function getTransactions() {
     try {
         const data = localStorage.getItem(DATABASE_KEY);
-        return data ? JSON.parse(data) : [];
+        if (!data) return [];
+
+        const transactions = JSON.parse(data);
+
+        if (!Array.isArray(transactions)) {
+            return [];
+        }
+
+        return transactions;
     } catch (error) {
         return [];
     }
@@ -42,77 +48,57 @@ function saveTransactions(transactions) {
 function getBaseFee(amount) {
     amount = Number(amount);
 
-    if (amount >= 1 && amount <= 500) {
-        return 5;
-    }
-
-    if (amount >= 501 && amount <= 1999) {
-        return 10;
-    }
-
-    if (amount >= 2000 && amount <= 5000) {
-        return 15;
-    }
-
-    if (amount >= 5001 && amount <= 9999) {
-        return 35;
-    }
-
-    if (amount === 10000) {
-        return 60;
-    }
+    if (amount >= 1 && amount <= 500) return 5;
+    if (amount >= 501 && amount <= 1999) return 10;
+    if (amount >= 2000 && amount <= 5000) return 15;
+    if (amount >= 5001 && amount <= 9999) return 35;
+    if (amount === 10000) return 60;
 
     return 0;
 }
 
-function countMidnights(startDate, endDate) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    if (
-        isNaN(start.getTime()) ||
-        isNaN(end.getTime()) ||
-        end <= start
-    ) {
-        return 0;
-    }
-
+function countMidnights(start, end) {
     let count = 0;
 
-    const midnight = new Date(start);
-    midnight.setHours(24, 0, 0, 0);
+    let current = new Date(start);
+    const finish = new Date(end);
 
-    while (midnight <= end) {
+    current.setHours(24, 0, 0, 0);
+
+    while (current <= finish) {
         count++;
-        midnight.setDate(midnight.getDate() + 1);
+        current.setDate(current.getDate() + 1);
     }
 
     return count;
 }
 
-function calculatePenalty(
-    cashIn,
-    cashInTime,
-    paymentTime
-) {
+function calculateTransaction(amount, cashInTime, paymentTime) {
+    amount = Number(amount);
+
+    if (!amount || amount <= 0) {
+        throw new Error("Please enter a valid cash-in amount.");
+    }
+
+    if (amount > MAX_CASH_IN) {
+        throw new Error("No cash-in / no utang above ₱10,000.");
+    }
+
     const start = new Date(cashInTime);
     const end = new Date(paymentTime);
 
-    if (
-        isNaN(start.getTime()) ||
-        isNaN(end.getTime())
-    ) {
-        return null;
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        throw new Error("Please enter both dates and times.");
     }
 
     if (end < start) {
-        return null;
+        throw new Error("Payment time cannot be earlier than cash-in time.");
     }
 
-    const milliseconds = end - start;
+    const difference = end.getTime() - start.getTime();
 
     const totalHours = Math.floor(
-        milliseconds / (1000 * 60 * 60)
+        difference / 3600000
     );
 
     const midnightCount = countMidnights(
@@ -120,19 +106,18 @@ function calculatePenalty(
         end
     );
 
+    const baseFee = getBaseFee(amount);
+
     let dayPenalty = 0;
     let chargeableHours = 0;
     let hourPenalty = 0;
     let latePenalty = 0;
 
-    if (cashIn < 100) {
+    if (amount < 100) {
 
         latePenalty = 0;
 
-    } else if (
-        cashIn >= 100 &&
-        cashIn <= 1999
-    ) {
+    } else if (amount <= 1999) {
 
         chargeableHours = Math.max(
             totalHours - FREE_HOURS,
@@ -148,125 +133,56 @@ function calculatePenalty(
         latePenalty =
             hourPenalty + dayPenalty;
 
-    } else if (
-        cashIn >= 2000 &&
-        cashIn <= 4999
-    ) {
+    } else if (amount <= 4999) {
 
         if (midnightCount > 0) {
             dayPenalty =
                 HIGH_FIRST_MIDNIGHT +
-                (
-                    midnightCount - 1
-                ) * HIGH_NEXT_MIDNIGHT;
+                ((midnightCount - 1) * HIGH_NEXT_MIDNIGHT);
         }
 
         latePenalty = dayPenalty;
 
-    } else if (
-        cashIn >= 5000 &&
-        cashIn <= 10000
-    ) {
+    } else {
 
         if (midnightCount > 0) {
             dayPenalty =
                 VERY_HIGH_FIRST_MIDNIGHT +
-                (
-                    midnightCount - 1
-                ) * VERY_HIGH_NEXT_MIDNIGHT;
+                ((midnightCount - 1) * VERY_HIGH_NEXT_MIDNIGHT);
         }
 
         latePenalty = dayPenalty;
     }
 
+    const totalFee = Math.ceil(
+        (baseFee + latePenalty) / 5
+    ) * 5;
+
+    const totalPay =
+        amount + totalFee;
+
     return {
+        cashIn: amount,
+        baseFee,
         totalHours,
         midnightCount,
         dayPenalty,
         chargeableHours,
         hourPenalty,
-        latePenalty
-    };
-}
-
-function calculateTransaction(
-    cashIn,
-    cashInTime,
-    paymentTime
-) {
-    cashIn = Number(cashIn);
-
-    if (!Number.isFinite(cashIn)) {
-        throw new Error(
-            "Please enter a valid cash-in amount."
-        );
-    }
-
-    if (cashIn <= 0) {
-        throw new Error(
-            "Cash-in amount must be greater than ₱0."
-        );
-    }
-
-    if (cashIn > MAX_CASH_IN) {
-        throw new Error(
-            "No cash-in / no utang above ₱10,000."
-        );
-    }
-
-    const baseFee = getBaseFee(cashIn);
-
-    const penalty = calculatePenalty(
-        cashIn,
-        cashInTime,
-        paymentTime
-    );
-
-    if (!penalty) {
-        throw new Error(
-            "Please enter valid cash-in and payment times."
-        );
-    }
-
-    const rawLatePenalty =
-        penalty.latePenalty;
-
-    const roundedLatePenalty =
-        Math.ceil(rawLatePenalty / 5) * 5;
-
-    const rawTotalFee =
-        baseFee + rawLatePenalty;
-
-    const totalFee =
-        Math.ceil(rawTotalFee / 5) * 5;
-
-    const totalPay =
-        cashIn + totalFee;
-
-    return {
-        cashIn,
-        baseFee,
-        totalHours: penalty.totalHours,
-        midnightCount: penalty.midnightCount,
-        dayPenalty: penalty.dayPenalty,
-        chargeableHours: penalty.chargeableHours,
-        hourPenalty: penalty.hourPenalty,
-        rawLatePenalty,
-        roundedLatePenalty,
-        rawTotalFee,
+        latePenalty,
         totalFee,
         totalPay
     };
 }
 
-function formatDate(date) {
-    const value = new Date(date);
+function formatDate(value) {
+    const date = new Date(value);
 
-    if (isNaN(value.getTime())) {
+    if (isNaN(date.getTime())) {
         return "-";
     }
 
-    return value.toLocaleString("en-PH", {
+    return date.toLocaleString("en-PH", {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -276,38 +192,28 @@ function formatDate(date) {
     });
 }
 
-function formatElapsedTime(hours) {
+function formatElapsed(hours) {
     const days = Math.floor(hours / 24);
-    const remainingHours = hours % 24;
+    const remaining = hours % 24;
 
     if (days > 0) {
-        return (
-            days +
-            " day(s) " +
-            remainingHours +
-            " hour(s)"
-        );
+        return days + " day(s) " + remaining + " hour(s)";
     }
 
     return hours + " hour(s)";
 }
 
 function showError(message) {
-    const error = document.getElementById(
-        "errorMessage"
-    );
+    const error = document.getElementById("errorMessage");
+    const result = document.getElementById("result");
 
     error.textContent = message;
     error.style.display = "block";
-
-    const result = document.getElementById("result");
     result.style.display = "none";
 }
 
 function hideError() {
-    const error = document.getElementById(
-        "errorMessage"
-    );
+    const error = document.getElementById("errorMessage");
 
     error.textContent = "";
     error.style.display = "none";
@@ -316,97 +222,82 @@ function hideError() {
 function calculateFee() {
     hideError();
 
-    const customerName =
-        document.getElementById(
-            "customerName"
-        ).value.trim();
-
-    const cashIn =
-        Number(
-            document.getElementById(
-                "cashIn"
-            ).value
-        );
-
-    const cashInTime =
-        document.getElementById(
-            "cashInTime"
-        ).value;
-
-    const paymentTime =
-        document.getElementById(
-            "paymentTime"
-        ).value;
-
-    const settled =
-        document.getElementById(
-            "settled"
-        ).checked;
-
     try {
+        const customerName =
+            document.getElementById("customerName").value.trim();
+
+        const cashIn =
+            Number(document.getElementById("cashIn").value);
+
+        const cashInTime =
+            document.getElementById("cashInTime").value;
+
+        const paymentTime =
+            document.getElementById("paymentTime").value;
+
+        const settled =
+            document.getElementById("settled").checked;
 
         if (!customerName) {
-            throw new Error(
-                "Please enter the customer name."
-            );
+            throw new Error("Please enter the customer name.");
         }
 
         if (!cashIn) {
-            throw new Error(
-                "Please enter the cash-in amount."
-            );
-        }
-
-        if (cashIn > MAX_CASH_IN) {
-            throw new Error(
-                "No cash-in / no utang above ₱10,000."
-            );
+            throw new Error("Please enter the cash-in amount.");
         }
 
         if (!cashInTime) {
-            throw new Error(
-                "Please enter the cash-in time."
-            );
+            throw new Error("Please enter the cash-in time.");
         }
 
         if (!paymentTime) {
-            throw new Error(
-                "Please enter the payment / settlement time."
-            );
+            throw new Error("Please enter the payment / settlement time.");
         }
 
-        const start = new Date(cashInTime);
-        const end = new Date(paymentTime);
-
-        if (end < start) {
-            throw new Error(
-                "Payment time cannot be earlier than cash-in time."
-            );
+        if (cashIn > MAX_CASH_IN) {
+            throw new Error("No cash-in / no utang above ₱10,000.");
         }
 
         const transactions = getTransactions();
 
-        const hasUnsettledDebt =
-            transactions.some(
-                transaction =>
-                    transaction.settled === false
-            );
+        const unsettled = transactions.some(
+            transaction => transaction.settled === false
+        );
 
-        if (
-            hasUnsettledDebt &&
-            !settled
-        ) {
+        if (unsettled && !settled) {
             throw new Error(
                 "No Settlement, No Cash-In. Please settle the previous debt first."
             );
         }
 
-        const result =
-            calculateTransaction(
-                cashIn,
-                cashInTime,
-                paymentTime
-            );
+        const result = calculateTransaction(
+            cashIn,
+            cashInTime,
+            paymentTime
+        );
+
+        const transaction = {
+            id: Date.now(),
+            date: new Date().toISOString(),
+            customerName: customerName,
+            cashIn: result.cashIn,
+            cashInTime: cashInTime,
+            paymentTime: paymentTime,
+            totalHours: result.totalHours,
+            midnightCount: result.midnightCount,
+            baseFee: result.baseFee,
+            dayPenalty: result.dayPenalty,
+            chargeableHours: result.chargeableHours,
+            hourPenalty: result.hourPenalty,
+            latePenalty: result.latePenalty,
+            totalFee: result.totalFee,
+            totalPay: result.totalPay,
+            settled: settled
+        };
+
+        transactions.push(transaction);
+
+        saveTransactions(transactions);
 
         displayResult(
             customerName,
@@ -414,38 +305,6 @@ function calculateFee() {
             paymentTime,
             result
         );
-
-        const transaction = {
-            id: Date.now(),
-            date: new Date().toISOString(),
-            customerName,
-            cashIn: result.cashIn,
-            cashInTime,
-            paymentTime,
-            totalHours: result.totalHours,
-            midnightCount: result.midnightCount,
-            baseFee: result.baseFee,
-            dayPenalty: result.dayPenalty,
-            chargeableHours:
-                result.chargeableHours,
-            hourPenalty:
-                result.hourPenalty,
-            rawLatePenalty:
-                result.rawLatePenalty,
-            latePenalty:
-                result.roundedLatePenalty,
-            rawTotalFee:
-                result.rawTotalFee,
-            totalFee:
-                result.totalFee,
-            totalPay:
-                result.totalPay,
-            settled
-        };
-
-        transactions.push(transaction);
-
-        saveTransactions(transactions);
 
         displayRecords();
 
@@ -460,256 +319,165 @@ function displayResult(
     paymentTime,
     result
 ) {
-    document.getElementById(
-        "resultName"
-    ).textContent = customerName;
+    document.getElementById("resultName").textContent =
+        customerName;
 
-    document.getElementById(
-        "resultCashIn"
-    ).textContent = peso(
-        result.cashIn
-    );
+    document.getElementById("resultCashIn").textContent =
+        peso(result.cashIn);
 
-    document.getElementById(
-        "resultCashInTime"
-    ).textContent = formatDate(
-        cashInTime
-    );
+    document.getElementById("resultCashInTime").textContent =
+        formatDate(cashInTime);
 
-    document.getElementById(
-        "resultPaymentTime"
-    ).textContent = formatDate(
-        paymentTime
-    );
+    document.getElementById("resultPaymentTime").textContent =
+        formatDate(paymentTime);
 
-    document.getElementById(
-        "resultElapsedTime"
-    ).textContent =
-        formatElapsedTime(
-            result.totalHours
-        );
+    document.getElementById("resultElapsedTime").textContent =
+        formatElapsed(result.totalHours);
 
-    document.getElementById(
-        "resultCompletedHours"
-    ).textContent =
+    document.getElementById("resultCompletedHours").textContent =
         result.totalHours;
 
-    document.getElementById(
-        "resultLateDays"
-    ).textContent =
+    document.getElementById("resultLateDays").textContent =
         result.midnightCount;
 
-    document.getElementById(
-        "resultBaseFee"
-    ).textContent =
+    document.getElementById("resultBaseFee").textContent =
         peso(result.baseFee);
 
-    document.getElementById(
-        "resultDayPenalty"
-    ).textContent =
+    document.getElementById("resultDayPenalty").textContent =
         peso(result.dayPenalty);
 
-    document.getElementById(
-        "resultChargeableHours"
-    ).textContent =
+    document.getElementById("resultChargeableHours").textContent =
         result.chargeableHours;
 
-    document.getElementById(
-        "resultHourlyPenalty"
-    ).textContent =
+    document.getElementById("resultHourlyPenalty").textContent =
         peso(result.hourPenalty);
 
-    document.getElementById(
-        "resultRawPenalty"
-    ).textContent =
-        peso(result.rawLatePenalty);
+    document.getElementById("resultRawPenalty").textContent =
+        peso(result.latePenalty);
 
-    document.getElementById(
-        "resultPenalty"
-    ).textContent =
-        peso(result.roundedLatePenalty);
+    document.getElementById("resultPenalty").textContent =
+        peso(Math.ceil(result.latePenalty / 5) * 5);
 
-    document.getElementById(
-        "resultRawFee"
-    ).textContent =
-        peso(result.rawTotalFee);
+    document.getElementById("resultRawFee").textContent =
+        peso(result.baseFee + result.latePenalty);
 
-    document.getElementById(
-        "resultFee"
-    ).textContent =
+    document.getElementById("resultFee").textContent =
         peso(result.totalFee);
 
-    document.getElementById(
-        "resultTotal"
-    ).textContent =
+    document.getElementById("resultTotal").textContent =
         peso(result.totalPay);
 
-    let breakdown = "";
+    let text = "";
 
     if (result.cashIn < 100) {
-
-        breakdown =
+        text =
             "<strong>Penalty:</strong> No late penalty.";
-
-    } else if (
-        result.cashIn >= 100 &&
-        result.cashIn <= 1999
-    ) {
-
-        breakdown =
+    } else if (result.cashIn <= 1999) {
+        text =
             "<strong>Calculation:</strong><br>" +
-            result.totalHours +
-            " completed hour(s)<br>" +
-            "Free hours: " +
-            FREE_HOURS +
+            "Completed hours: " + result.totalHours +
             "<br>" +
-            "Chargeable hours: " +
-            result.chargeableHours +
+            "Free hours: " + FREE_HOURS +
             "<br>" +
-            "Hourly penalty: " +
-            peso(result.hourPenalty) +
+            "Chargeable hours: " + result.chargeableHours +
             "<br>" +
-            "Midnight penalty: " +
-            peso(result.dayPenalty) +
+            "Hourly penalty: " + peso(result.hourPenalty) +
             "<br>" +
-            "Late penalty: " +
-            peso(result.rawLatePenalty);
-
-    } else if (
-        result.cashIn >= 2000 &&
-        result.cashIn <= 4999
-    ) {
-
-        breakdown =
+            "Midnight penalty: " + peso(result.dayPenalty) +
+            "<br>" +
+            "Total late penalty: " + peso(result.latePenalty);
+    } else if (result.cashIn <= 4999) {
+        text =
             "<strong>Calculation:</strong><br>" +
-            "Midnights crossed: " +
-            result.midnightCount +
+            "Midnights crossed: " + result.midnightCount +
             "<br>" +
-            "Midnight penalty: " +
-            peso(result.dayPenalty);
-
+            "Midnight penalty: " + peso(result.dayPenalty);
     } else {
-
-        breakdown =
+        text =
             "<strong>Calculation:</strong><br>" +
-            "Midnights crossed: " +
-            result.midnightCount +
+            "Midnights crossed: " + result.midnightCount +
             "<br>" +
-            "Midnight penalty: " +
-            peso(result.dayPenalty);
+            "Midnight penalty: " + peso(result.dayPenalty);
     }
 
-    document.getElementById(
-        "breakdown"
-    ).innerHTML = breakdown;
-
-    document.getElementById(
-        "result"
-    ).style.display = "block";
-
-    document.getElementById(
-        "result"
-    ).scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-    });
+    document.getElementById("breakdown").innerHTML = text;
+    document.getElementById("result").style.display = "block";
 }
 
 function displayRecords() {
-
     const table =
-        document.getElementById(
-            "transactionTable"
-        );
+        document.getElementById("transactionTable");
 
     const count =
-        document.getElementById(
-            "recordCount"
-        );
+        document.getElementById("recordCount");
 
     const search =
-        document.getElementById(
-            "searchInput"
-        ).value
+        document.getElementById("searchInput")
+            .value
             .trim()
             .toLowerCase();
 
-    const transactions =
-        getTransactions();
+    const transactions = getTransactions();
 
-    const filtered =
-        transactions.filter(
-            transaction =>
-                transaction.customerName
-                    .toLowerCase()
-                    .includes(search)
-        );
-
-    count.textContent =
-        transactions.length;
+    count.textContent = transactions.length;
 
     table.innerHTML = "";
 
+    const filtered = transactions.filter(transaction => {
+        const name = String(
+            transaction.customerName || ""
+        ).toLowerCase();
+
+        return name.includes(search);
+    });
+
     if (filtered.length === 0) {
+        table.innerHTML =
+            '<tr><td colspan="14" class="empty-database">No transactions found.</td></tr>';
+        return;
+    }
+
+    filtered.forEach(transaction => {
+
+        const index =
+            transactions.findIndex(
+                item => item.id === transaction.id
+            );
 
         const row =
             document.createElement("tr");
 
-        row.innerHTML =
-            '<td colspan="14" class="empty-database">No transactions found.</td>';
+        row.innerHTML = `
+            <td>${formatDate(transaction.date)}</td>
+            <td>${escapeHtml(transaction.customerName || "")}</td>
+            <td>${peso(transaction.cashIn)}</td>
+            <td>${formatDate(transaction.cashInTime)}</td>
+            <td>${formatDate(transaction.paymentTime)}</td>
+            <td>${Number(transaction.totalHours) || 0}</td>
+            <td>${peso(transaction.baseFee)}</td>
+            <td>${peso(transaction.dayPenalty)}</td>
+            <td>${Number(transaction.chargeableHours) || 0}</td>
+            <td>${peso(transaction.hourPenalty)}</td>
+            <td>${peso(transaction.latePenalty)}</td>
+            <td>${peso(transaction.totalFee)}</td>
+            <td>${peso(transaction.totalPay)}</td>
+            <td>
+                <button
+                    type="button"
+                    class="delete-btn"
+                    onclick="deleteRecord(${index})"
+                >
+                    DELETE
+                </button>
+            </td>
+        `;
 
         table.appendChild(row);
-
-        return;
-    }
-
-    filtered.forEach(
-        transaction => {
-
-            const originalIndex =
-                transactions.findIndex(
-                    item =>
-                        item.id ===
-                        transaction.id
-                );
-
-            const row =
-                document.createElement("tr");
-
-            row.innerHTML = `
-                <td>${formatDate(transaction.date)}</td>
-                <td>${escapeHtml(transaction.customerName)}</td>
-                <td>${peso(transaction.cashIn)}</td>
-                <td>${formatDate(transaction.cashInTime)}</td>
-                <td>${formatDate(transaction.paymentTime)}</td>
-                <td>${transaction.totalHours}</td>
-                <td>${peso(transaction.baseFee)}</td>
-                <td>${peso(transaction.dayPenalty)}</td>
-                <td>${transaction.chargeableHours}</td>
-                <td>${peso(transaction.hourPenalty)}</td>
-                <td>${peso(transaction.latePenalty)}</td>
-                <td>${peso(transaction.totalFee)}</td>
-                <td>${peso(transaction.totalPay)}</td>
-                <td>
-                    <button
-                        type="button"
-                        class="delete-btn"
-                        onclick="deleteRecord(${originalIndex})"
-                    >
-                        DELETE
-                    </button>
-                </td>
-            `;
-
-            table.appendChild(row);
-        }
-    );
+    });
 }
 
 function deleteRecord(index) {
-
-    const transactions =
-        getTransactions();
+    const transactions = getTransactions();
 
     if (
         index < 0 ||
@@ -726,107 +494,41 @@ function deleteRecord(index) {
 }
 
 function deleteAllRecords() {
-
-    const transactions =
-        getTransactions();
+    const transactions = getTransactions();
 
     if (transactions.length === 0) {
         return;
     }
 
-    const confirmed =
-        confirm(
-            "Delete all transaction records?"
-        );
-
-    if (!confirmed) {
+    if (!confirm("Delete all transaction records?")) {
         return;
     }
 
-    localStorage.removeItem(
-        DATABASE_KEY
-    );
+    localStorage.removeItem(DATABASE_KEY);
 
     displayRecords();
 
-    document.getElementById(
-        "result"
-    ).style.display = "none";
+    document.getElementById("result").style.display = "none";
 }
 
 function clearCalculator() {
-
-    document.getElementById(
-        "customerName"
-    ).value = "";
-
-    document.getElementById(
-        "cashIn"
-    ).value = "";
-
-    document.getElementById(
-        "cashInTime"
-    ).value = "";
-
-    document.getElementById(
-        "paymentTime"
-    ).value = "";
-
-    document.getElementById(
-        "settled"
-    ).checked = false;
+    document.getElementById("customerName").value = "";
+    document.getElementById("cashIn").value = "";
+    document.getElementById("cashInTime").value = "";
+    document.getElementById("paymentTime").value = "";
+    document.getElementById("settled").checked = false;
 
     hideError();
 
-    document.getElementById(
-        "result"
-    ).style.display = "none";
+    document.getElementById("result").style.display = "none";
 }
 
 function escapeHtml(value) {
-
-    const div =
-        document.createElement("div");
-
-    div.textContent =
-        value;
-
+    const div = document.createElement("div");
+    div.textContent = value;
     return div.innerHTML;
 }
 
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
-
-        document.getElementById(
-            "calculateBtn"
-        ).addEventListener(
-            "click",
-            calculateFee
-        );
-
-        document.getElementById(
-            "clearBtn"
-        ).addEventListener(
-            "click",
-            clearCalculator
-        );
-
-        document.getElementById(
-            "deleteAllBtn"
-        ).addEventListener(
-            "click",
-            deleteAllRecords
-        );
-
-        document.getElementById(
-            "searchInput"
-        ).addEventListener(
-            "input",
-            displayRecords
-        );
-
-        displayRecords();
-    }
-);
-
+window.addEventListener("load", function() {
+    displayRecords();
+});
