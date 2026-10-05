@@ -1,50 +1,101 @@
-const DATABASE_KEY = "cashin_transactions_v7";
+```javascript
+/* =====================================================
+   CASH-IN FEE CALCULATOR
+   MAXIMUM UTANG / CASH-IN = ₱10,000
+===================================================== */
+
+
+/* =====================================================
+   DATABASE
+===================================================== */
+
+const DATABASE_KEY = "cashin_transactions_v9";
+
+
+/* =====================================================
+   RULE CONSTANTS
+===================================================== */
 
 const FREE_HOURS = 4;
 const HOURLY_RATE = 1;
 
+/*
+    ₱100 - ₱1,999
+*/
 const MIDNIGHT_PENALTY = 2;
 
+
+/*
+    ₱2,000 - ₱4,999
+*/
 const HIGH_FIRST_MIDNIGHT = 50;
 const HIGH_NEXT_MIDNIGHT = 30;
 
 
-/* =========================
+/*
+    ₱5,000 - ₱10,000
+*/
+const VERY_HIGH_FIRST_MIDNIGHT = 100;
+const VERY_HIGH_NEXT_MIDNIGHT = 50;
+
+
+/*
+    Maximum allowed transaction
+*/
+const MAX_CASH_IN = 10000;
+
+
+/* =====================================================
    BASIC HELPERS
-========================= */
+===================================================== */
 
 function roundToFive(amount) {
+
     return Math.round(amount / 5) * 5;
+
 }
 
 
 function peso(amount) {
+
     return new Intl.NumberFormat("en-PH", {
+
         style: "currency",
+
         currency: "PHP",
+
         minimumFractionDigits: 2,
+
         maximumFractionDigits: 2
+
     }).format(amount);
+
 }
 
 
 function getElement(id) {
+
     return document.getElementById(id);
+
 }
 
 
 function setText(id, value) {
+
     const element = getElement(id);
 
     if (element) {
+
         element.textContent = value;
+
     }
+
 }
 
 
-/* =========================
+/* =====================================================
    BASE FEE
-========================= */
+===================================================== */
 
 function getBaseFee(amount) {
 
@@ -64,7 +115,7 @@ function getBaseFee(amount) {
         return 35;
     }
 
-    if (amount >= 10000 && amount <= 50000) {
+    if (amount === 10000) {
         return 60;
     }
 
@@ -72,9 +123,9 @@ function getBaseFee(amount) {
 }
 
 
-/* =========================
+/* =====================================================
    DATE / TIME
-========================= */
+===================================================== */
 
 function getDateTime(id) {
 
@@ -94,9 +145,9 @@ function getDateTime(id) {
 }
 
 
-/* =========================
+/* =====================================================
    ELAPSED TIME
-========================= */
+===================================================== */
 
 function calculateElapsed(start, end) {
 
@@ -108,16 +159,22 @@ function calculateElapsed(start, end) {
     }
 
     const totalMinutes =
-        Math.floor(difference / (1000 * 60));
+        Math.floor(
+            difference / (1000 * 60)
+        );
 
     const totalHours =
-        Math.floor(totalMinutes / 60);
+        Math.floor(
+            totalMinutes / 60
+        );
 
     const minutes =
         totalMinutes % 60;
 
     const days =
-        Math.floor(totalHours / 24);
+        Math.floor(
+            totalHours / 24
+        );
 
     const hours =
         totalHours % 24;
@@ -131,31 +188,9 @@ function calculateElapsed(start, end) {
 }
 
 
-/* =========================
+/* =====================================================
    MIDNIGHT COUNTER
-========================= */
-
-/*
-    IMPORTANT:
-
-    This does NOT wait 24 hours.
-
-    It counts how many calendar midnights
-    were crossed.
-
-    Example:
-
-    4:00 PM -> 12:00 AM
-    = 1 midnight
-
-    4:00 PM -> 1:00 AM
-    = 1 midnight
-
-    4:00 PM -> next day 12:00 AM
-    = 2 midnights
-
-    The penalty is based on midnight crossings.
-*/
+===================================================== */
 
 function countMidnights(start, end) {
 
@@ -167,7 +202,12 @@ function countMidnights(start, end) {
 
     const midnight = new Date(start);
 
-    midnight.setHours(24, 0, 0, 0);
+    midnight.setHours(
+        24,
+        0,
+        0,
+        0
+    );
 
     while (midnight <= end) {
 
@@ -182,9 +222,9 @@ function countMidnights(start, end) {
 }
 
 
-/* =========================
+/* =====================================================
    CALCULATE FEE
-========================= */
+===================================================== */
 
 function calculateFee() {
 
@@ -227,7 +267,9 @@ function calculateFee() {
     clearMessage();
 
 
-    /* CUSTOMER */
+    /* =================================================
+       CUSTOMER
+    ================================================= */
 
     if (!customerName) {
 
@@ -239,9 +281,14 @@ function calculateFee() {
     }
 
 
-    /* AMOUNT */
+    /* =================================================
+       AMOUNT
+    ================================================= */
 
-    if (!Number.isFinite(cashIn) || cashIn <= 0) {
+    if (
+        !Number.isFinite(cashIn) ||
+        cashIn <= 0
+    ) {
 
         showError(
             "Please enter a valid cash-in amount."
@@ -251,17 +298,23 @@ function calculateFee() {
     }
 
 
-    if (cashIn > 50000) {
+    /*
+        NO UTANG ABOVE ₱10,000
+    */
+
+    if (cashIn > MAX_CASH_IN) {
 
         showError(
-            "Maximum transaction amount is ₱50,000."
+            "No cash-in / no utang above ₱10,000."
         );
 
         return;
     }
 
 
-    /* CASH-IN TIME */
+    /* =================================================
+       CASH-IN TIME
+    ================================================= */
 
     if (!cashInTime) {
 
@@ -273,7 +326,9 @@ function calculateFee() {
     }
 
 
-    /* PAYMENT TIME */
+    /* =================================================
+       PAYMENT TIME
+    ================================================= */
 
     if (!paymentTime) {
 
@@ -285,7 +340,9 @@ function calculateFee() {
     }
 
 
-    /* TIME VALIDATION */
+    /* =================================================
+       TIME VALIDATION
+    ================================================= */
 
     if (paymentTime < cashInTime) {
 
@@ -318,12 +375,9 @@ function calculateFee() {
         elapsed.totalHours;
 
 
-    /*
-        NEW RULE:
-
-        Count calendar midnights,
-        NOT 24-hour periods.
-    */
+    /* =================================================
+       MIDNIGHTS
+    ================================================= */
 
     const midnightCount =
         countMidnights(
@@ -332,14 +386,14 @@ function calculateFee() {
         );
 
 
-    /*
-        Settlement check.
+    /* =================================================
+       SETTLEMENT
+    ================================================= */
 
-        If there is an actual waiting period,
-        settlement must be checked.
-    */
-
-    if (totalHours > 0 && !settled) {
+    if (
+        totalHours > 0 &&
+        !settled
+    ) {
 
         showError(
             "NO SETTLEMENT, NO CASH-IN: Please settle the previous debt first."
@@ -348,6 +402,10 @@ function calculateFee() {
         return;
     }
 
+
+    /* =================================================
+       BASE FEE
+    ================================================= */
 
     const baseFee =
         getBaseFee(cashIn);
@@ -363,6 +421,10 @@ function calculateFee() {
     }
 
 
+    /* =================================================
+       VARIABLES
+    ================================================= */
+
     let dayPenalty = 0;
 
     let chargeableHours = 0;
@@ -374,9 +436,9 @@ function calculateFee() {
     let roundedLatePenalty = 0;
 
 
-    /* =========================
+    /* =================================================
        BELOW ₱100
-    ========================= */
+    ================================================= */
 
     if (cashIn < 100) {
 
@@ -392,24 +454,20 @@ function calculateFee() {
     }
 
 
-    /* =========================
+    /* =================================================
        ₱100 - ₱1,999
-    ========================= */
+    ================================================= */
 
     else if (cashIn <= 1999) {
 
         /*
-            FIRST 4 HOURS FREE.
+            FIRST 4 HOURS = FREE
 
-            Example:
+            AFTER 4 HOURS:
+            ₱1 PER CHARGEABLE HOUR
 
-            4 PM -> 8 PM
-            = 4 hours
-            = ₱0 hourly
-
-            4 PM -> 9 PM
-            = 5 hours
-            = ₱1 hourly
+            PLUS:
+            ₱2 FOR EVERY MIDNIGHT CROSSED
         */
 
         if (totalHours > FREE_HOURS) {
@@ -424,16 +482,19 @@ function calculateFee() {
 
 
         hourlyPenalty =
-            chargeableHours * HOURLY_RATE;
+            chargeableHours *
+            HOURLY_RATE;
+
+
+        dayPenalty =
+            midnightCount *
+            MIDNIGHT_PENALTY;
 
 
         /*
-            ₱2 FOR EACH MIDNIGHT CROSSED.
+            Midnight penalty and hourly penalty
+            are ADDED together.
         */
-
-        dayPenalty =
-            midnightCount * MIDNIGHT_PENALTY;
-
 
         rawLatePenalty =
             dayPenalty +
@@ -447,24 +508,24 @@ function calculateFee() {
     }
 
 
-    /* =========================
-       ₱2,000 AND ABOVE
-    ========================= */
+    /* =================================================
+       ₱2,000 - ₱4,999
+    ================================================= */
 
-    else {
+    else if (cashIn <= 4999) {
+
+        /*
+            FIRST MIDNIGHT = ₱50
+
+            EACH ADDITIONAL MIDNIGHT = ₱30
+
+            NO HOURLY PENALTY
+        */
 
         chargeableHours = 0;
 
         hourlyPenalty = 0;
 
-
-        /*
-            FIRST MIDNIGHT = ₱50
-
-            SECOND MIDNIGHT = ₱30
-
-            THIRD MIDNIGHT = ₱30
-        */
 
         if (midnightCount >= 1) {
 
@@ -492,9 +553,54 @@ function calculateFee() {
     }
 
 
-    /* =========================
+    /* =================================================
+       ₱5,000 - ₱10,000
+    ================================================= */
+
+    else {
+
+        /*
+            FIRST MIDNIGHT = ₱100
+
+            EACH ADDITIONAL MIDNIGHT = ₱50
+
+            NO HOURLY PENALTY
+        */
+
+        chargeableHours = 0;
+
+        hourlyPenalty = 0;
+
+
+        if (midnightCount >= 1) {
+
+            dayPenalty =
+                VERY_HIGH_FIRST_MIDNIGHT +
+                (
+                    (midnightCount - 1) *
+                    VERY_HIGH_NEXT_MIDNIGHT
+                );
+
+        } else {
+
+            dayPenalty = 0;
+        }
+
+
+        rawLatePenalty =
+            dayPenalty;
+
+
+        roundedLatePenalty =
+            roundToFive(
+                rawLatePenalty
+            );
+    }
+
+
+    /* =================================================
        FINAL TOTAL
-    ========================= */
+    ================================================= */
 
     const rawTotalFee =
         baseFee +
@@ -512,99 +618,84 @@ function calculateFee() {
         totalFee;
 
 
-    /* =========================
-       DISPLAY RESULT
-    ========================= */
+    /* =================================================
+       DISPLAY
+    ================================================= */
 
     setText(
         "resultName",
         customerName
     );
 
-
     setText(
         "resultCashIn",
         peso(cashIn)
     );
-
 
     setText(
         "resultCashInTime",
         formatDate(cashInTime)
     );
 
-
     setText(
         "resultPaymentTime",
         formatDate(paymentTime)
     );
-
 
     setText(
         "resultElapsedTime",
         `${elapsed.days} day(s), ${elapsed.hours} hour(s), ${elapsed.minutes} minute(s)`
     );
 
-
     setText(
         "resultCompletedHours",
         totalHours
     );
-
 
     setText(
         "resultLateDays",
         midnightCount
     );
 
-
     setText(
         "resultBaseFee",
         peso(baseFee)
     );
-
 
     setText(
         "resultDayPenalty",
         peso(dayPenalty)
     );
 
-
     setText(
         "resultChargeableHours",
         chargeableHours
     );
-
 
     setText(
         "resultHourlyPenalty",
         peso(hourlyPenalty)
     );
 
-
     setText(
         "resultRawPenalty",
         peso(rawLatePenalty)
     );
-
 
     setText(
         "resultPenalty",
         peso(roundedLatePenalty)
     );
 
-
     setText(
         "resultRawFee",
         peso(rawTotalFee)
     );
 
-
     setText(
         "resultFee",
         peso(totalFee)
     );
-
 
     setText(
         "resultTotal",
@@ -612,15 +703,47 @@ function calculateFee() {
     );
 
 
-    /* =========================
+    /* =================================================
        BREAKDOWN
-    ========================= */
+    ================================================= */
 
     const breakdown =
         getElement("breakdown");
 
 
     if (breakdown) {
+
+        let penaltyRule = "";
+
+
+        if (cashIn < 100) {
+
+            penaltyRule =
+                "No late penalty.";
+
+        }
+
+        else if (cashIn <= 1999) {
+
+            penaltyRule =
+                "First 4 hours free + ₱1/hour + ₱2 per midnight.";
+
+        }
+
+        else if (cashIn <= 4999) {
+
+            penaltyRule =
+                "First midnight ₱50 + ₱30 each additional midnight.";
+
+        }
+
+        else {
+
+            penaltyRule =
+                "First midnight ₱100 + ₱50 each additional midnight.";
+
+        }
+
 
         breakdown.innerHTML = `
 
@@ -655,28 +778,18 @@ function calculateFee() {
 
             <br>
 
+            <strong>Penalty Rule:</strong>
+            ${penaltyRule}
+
+            <br>
+
             <strong>Midnight Penalty:</strong>
             ${peso(dayPenalty)}
 
             <br>
 
-            <strong>Free Hours:</strong>
-            ${FREE_HOURS}
-
-            <br>
-
             <strong>Chargeable Hours:</strong>
             ${chargeableHours}
-
-            <br>
-
-            <strong>Hourly Rate:</strong>
-            ${
-                cashIn >= 100 &&
-                cashIn <= 1999
-                    ? "₱1.00/hour"
-                    : "None"
-            }
 
             <br>
 
@@ -702,28 +815,37 @@ function calculateFee() {
 
             <strong>TOTAL TO PAY:</strong>
             ${peso(totalToPay)}
+
         `;
     }
 
+
+    /* =================================================
+       SHOW RESULT
+    ================================================= */
 
     const result =
         getElement("result");
 
 
     if (result) {
+
         result.style.display = "block";
+
     }
 
 
-    /* =========================
+    /* =================================================
        SAVE
-    ========================= */
+    ================================================= */
 
     saveTransaction({
 
-        id: createTransactionId(),
+        id:
+            createTransactionId(),
 
-        date: new Date().toISOString(),
+        date:
+            new Date().toISOString(),
 
         customerName,
 
@@ -746,11 +868,6 @@ function calculateFee() {
 
         completedHours:
             totalHours,
-
-        /*
-            This now means:
-            number of calendar midnights crossed.
-        */
 
         lateDays:
             midnightCount,
@@ -779,12 +896,13 @@ function calculateFee() {
         settled
 
     });
+
 }
 
 
-/* =========================
+/* =====================================================
    TRANSACTION ID
-========================= */
+===================================================== */
 
 function createTransactionId() {
 
@@ -797,36 +915,35 @@ function createTransactionId() {
             Math.random() * 9000
         )
     );
+
 }
 
 
-/* =========================
+/* =====================================================
    SAVE
-========================= */
+===================================================== */
 
 function saveTransaction(transaction) {
 
     const transactions =
         getTransactions();
 
-
     transactions.unshift(
         transaction
     );
-
 
     saveTransactions(
         transactions
     );
 
-
     displayRecords();
+
 }
 
 
-/* =========================
+/* =====================================================
    GET DATABASE
-========================= */
+===================================================== */
 
 function getTransactions() {
 
@@ -846,7 +963,6 @@ function getTransactions() {
         const data =
             JSON.parse(saved);
 
-
         return Array.isArray(data)
             ? data
             : [];
@@ -863,9 +979,9 @@ function getTransactions() {
 }
 
 
-/* =========================
+/* =====================================================
    SAVE DATABASE
-========================= */
+===================================================== */
 
 function saveTransactions(transactions) {
 
@@ -892,9 +1008,9 @@ function saveTransactions(transactions) {
 }
 
 
-/* =========================
+/* =====================================================
    DISPLAY DATABASE
-========================= */
+===================================================== */
 
 function displayRecords() {
 
@@ -945,8 +1061,10 @@ function displayRecords() {
 
 
     if (count) {
+
         count.textContent =
             transactions.length;
+
     }
 
 
@@ -1083,14 +1201,15 @@ function displayRecords() {
 
 
             table.appendChild(row);
+
         }
     );
 }
 
 
-/* =========================
+/* =====================================================
    DELETE ONE
-========================= */
+===================================================== */
 
 function deleteTransaction(id) {
 
@@ -1099,6 +1218,7 @@ function deleteTransaction(id) {
             "Are you sure you want to delete this transaction?"
         )
     ) {
+
         return;
     }
 
@@ -1123,9 +1243,9 @@ function deleteTransaction(id) {
 }
 
 
-/* =========================
+/* =====================================================
    DELETE ALL
-========================= */
+===================================================== */
 
 function deleteAllRecords() {
 
@@ -1148,6 +1268,7 @@ function deleteAllRecords() {
             "WARNING: This will delete ALL transactions from this browser. Continue?"
         )
     ) {
+
         return;
     }
 
@@ -1161,9 +1282,9 @@ function deleteAllRecords() {
 }
 
 
-/* =========================
+/* =====================================================
    FORMAT DATE
-========================= */
+===================================================== */
 
 function formatDate(value) {
 
@@ -1195,9 +1316,9 @@ function formatDate(value) {
 }
 
 
-/* =========================
+/* =====================================================
    ESCAPE HTML
-========================= */
+===================================================== */
 
 function escapeHtml(text) {
 
@@ -1217,9 +1338,9 @@ function escapeHtml(text) {
 }
 
 
-/* =========================
+/* =====================================================
    ERROR
-========================= */
+===================================================== */
 
 function showError(message) {
 
@@ -1243,9 +1364,9 @@ function showError(message) {
 }
 
 
-/* =========================
+/* =====================================================
    CLEAR ERROR
-========================= */
+===================================================== */
 
 function clearMessage() {
 
@@ -1267,9 +1388,9 @@ function clearMessage() {
 }
 
 
-/* =========================
+/* =====================================================
    CLEAR CALCULATOR
-========================= */
+===================================================== */
 
 function clearCalculator() {
 
@@ -1308,15 +1429,17 @@ function clearCalculator() {
 
 
     if (result) {
+
         result.style.display =
             "none";
+
     }
 }
 
 
-/* =========================
+/* =====================================================
    PAGE LOAD
-========================= */
+===================================================== */
 
 document.addEventListener(
     "DOMContentLoaded",
@@ -1326,3 +1449,4 @@ document.addEventListener(
 
     }
 );
+```
