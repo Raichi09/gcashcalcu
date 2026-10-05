@@ -13,7 +13,6 @@
 <div class="app">
 
     <header class="header">
-
         <div class="logo">
             <div class="logo-icon">G</div>
             <span>GCash</span>
@@ -26,47 +25,28 @@
         <div class="maximum">
             MAXIMUM ₱10,000
         </div>
-
     </header>
-
 
     <main class="calculator">
 
         <h1>Fee Calculator</h1>
+        <p class="subtitle">Enter customer transaction details</p>
 
-        <p class="subtitle">
-            Enter customer transaction details
-        </p>
-
-
-        <!-- CUSTOMER -->
         <div class="form-group">
-
-            <label for="customerName">
-                Customer Name
-            </label>
-
+            <label for="customerName">Customer Name</label>
             <input
                 type="text"
                 id="customerName"
                 placeholder="Enter customer name"
                 maxlength="100"
             >
-
         </div>
 
-
-        <!-- CASH-IN -->
         <div class="form-group">
-
-            <label for="cashIn">
-                Cash-In Amount
-            </label>
+            <label for="cashIn">Cash-In Amount</label>
 
             <div class="input-wrapper">
-
                 <span class="peso-symbol">₱</span>
-
                 <input
                     type="number"
                     id="cashIn"
@@ -75,94 +55,39 @@
                     max="10000"
                     step="0.01"
                 >
-
             </div>
 
-            <small>
-                Maximum transaction amount: ₱10,000
-            </small>
-
+            <small>Maximum transaction amount: ₱10,000</small>
         </div>
 
-
-        <!-- CASH-IN TIME -->
         <div class="form-group">
-
-            <label for="cashInTime">
-                Cash-In Time
-            </label>
-
-            <input
-                type="datetime-local"
-                id="cashInTime"
-            >
-
+            <label for="cashInTime">Cash-In Time</label>
+            <input type="datetime-local" id="cashInTime">
         </div>
 
-
-        <!-- PAYMENT TIME -->
         <div class="form-group">
-
-            <label for="paymentTime">
-                Payment / Settlement Time
-            </label>
-
-            <input
-                type="datetime-local"
-                id="paymentTime"
-            >
-
+            <label for="paymentTime">Payment / Settlement Time</label>
+            <input type="datetime-local" id="paymentTime">
         </div>
 
-
-        <!-- SETTLEMENT -->
         <div class="settlement-box">
-
-            <input
-                type="checkbox"
-                id="settled"
-            >
-
-            <label for="settled">
-                Previous debt has been settled
-            </label>
-
+            <input type="checkbox" id="settled">
+            <label for="settled">Previous debt has been settled</label>
         </div>
 
-
-        <!-- BUTTONS -->
-        <button
-            type="button"
-            class="calculate-btn"
-            onclick="calculateFee()"
-        >
+        <button type="button" class="calculate-btn" id="calculateBtn">
             CALCULATE & SAVE
         </button>
 
-        <button
-            type="button"
-            class="clear-btn"
-            onclick="clearCalculator()"
-        >
+        <button type="button" class="clear-btn" id="clearBtn">
             CLEAR
         </button>
 
+        <div id="errorMessage" class="error"></div>
 
-        <!-- ERROR -->
-        <div
-            id="errorMessage"
-            class="error"
-        ></div>
-
-
-        <!-- RESULT -->
-        <div
-            id="result"
-            class="result"
-        >
+        <div id="result" class="result">
 
             <h2>Transaction Summary</h2>
-
 
             <div class="result-row">
                 <span>Customer</span>
@@ -248,8 +173,6 @@
 
         </div>
 
-
-        <!-- BASE FEE TABLE -->
         <div class="fee-table">
 
             <h2>Base Fee Schedule</h2>
@@ -286,155 +209,99 @@
 
         </div>
 
-
-        <!-- RULES -->
         <div class="rules">
 
             <h2>Late Fee Rules</h2>
 
             <div class="rule">
-
                 <strong>Below ₱100</strong>
-
-                <p>
-                    No late penalty.
-                </p>
-
+                <p>No late penalty.</p>
             </div>
 
-
             <div class="rule">
-
                 <strong>₱100 – ₱1,999</strong>
-
                 <p>
                     First 4 hours are free.<br>
                     ₱1 per chargeable hour after 4 hours.<br>
                     ₱2 every time the transaction crosses midnight.
                 </p>
-
             </div>
 
-
             <div class="rule">
-
                 <strong>₱2,000 – ₱4,999</strong>
-
                 <p>
                     First midnight = ₱50.<br>
                     Each additional midnight = ₱30.<br>
                     No hourly penalty.
                 </p>
-
             </div>
 
-
             <div class="rule">
-
                 <strong>₱5,000 – ₱10,000</strong>
-
                 <p>
                     First midnight = ₱100.<br>
                     Each additional midnight = ₱50.<br>
                     No hourly penalty.
                 </p>
-
             </div>
 
-
             <div class="rule">
-
                 <strong>Above ₱10,000</strong>
-
-                <p>
-                    No cash-in / no utang above ₱10,000.
-                </p>
-
+                <p>No cash-in / no utang above ₱10,000.</p>
             </div>
 
-
             <div class="rule">
-
                 <strong>FEE ROUNDING</strong>
-
-                <p>
-                    Final fee rounded to nearest ₱5.
-                </p>
-
+                <p>Final fee rounded to nearest ₱5.</p>
             </div>
-
 
             <div class="rule">
-
                 <strong>TOTAL TO PAY</strong>
-
-                <p>
-                    Cash-In Amount + Total Fee.
-                </p>
-
+                <p>Cash-In Amount + Total Fee.</p>
             </div>
-
 
             <div class="rule no-settlement">
-
                 <strong>NO SETTLEMENT, NO CASH-IN</strong>
-
-                <p>
-                    Previous debt must be settled.
-                </p>
-
+                <p>Previous debt must be settled.</p>
             </div>
 
         </div>
 
-
-        <!-- DATABASE -->
         <section class="database">
 
             <div class="database-header">
 
                 <div>
-
                     <h2>Transaction Database</h2>
-
                     <p>
                         Saved transactions:
                         <strong id="recordCount">0</strong>
                     </p>
-
                 </div>
 
                 <button
                     type="button"
                     class="delete-all-btn"
-                    onclick="deleteAllRecords()"
+                    id="deleteAllBtn"
                 >
                     DELETE ALL
                 </button>
 
             </div>
 
-
-            <!-- SEARCH -->
             <div class="search-box">
-
                 <input
                     type="text"
                     id="searchInput"
                     placeholder="Search customer name..."
-                    oninput="displayRecords()"
                 >
-
             </div>
 
-
-            <!-- TABLE -->
             <div class="table-container">
 
                 <table>
 
                     <thead>
-
                         <tr>
                             <th>Date</th>
                             <th>Customer</th>
@@ -451,7 +318,6 @@
                             <th>Total Pay</th>
                             <th>Action</th>
                         </tr>
-
                     </thead>
 
                     <tbody id="transactionTable"></tbody>
@@ -465,7 +331,6 @@
     </main>
 
 </div>
-
 
 <script src="script.js"></script>
 
